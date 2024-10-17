@@ -63,7 +63,7 @@ public class FishControllerNetwork : NetworkBehaviour
         RegisterHitForPlayer(clientId);
 
         // Spawn the die effect
-        //_level.SpawnDieEffect(transform.position);
+        _level.SpawnDieEffect(transform.position);
 
         // Notify clients to spawn the die effect at this position
         SpawnDieEffectClientRpc(transform.position);

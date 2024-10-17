@@ -16,19 +16,30 @@ public class LevelManagerNetwork : NetworkBehaviour
     public LevelConfig Config => _config;
 
     public GameObject fishPrefab;  // Fish prefab must have NetworkObject component
-
+    public GameObject effectPrefab; // Effect prefab must have NetworkObject component
     public static LevelManagerNetwork Instance;
     private void Awake()
     {
         Instance = this;
         
-        _config = Resources.Load<LevelConfig>("LevelConfig");
-        if (_config == null) Debug.LogError("LevelConfig not found");
+        
     }
 
     public override void OnNetworkSpawn()
     {
         Debug.Log("OnNetworkSpawn");
+        
+        _config = Resources.Load<LevelConfig>("LevelConfig");
+        if (_config == null) Debug.LogError("LevelConfig not found");
+        else
+        {
+            if (_config.FishKilledEffectMultiplayerPrefab == null)
+            {
+                Debug.LogError("FishKilledEffectMultiplayerPrefab not found");
+                _config.FishKilledEffectMultiplayerPrefab = Resources.Load<GameObject>("FishKilledEffect");
+            }
+        }
+        
         // if (IsServer)
         // {
         //     // Server controls fish spawning
@@ -208,7 +219,8 @@ public class LevelManagerNetwork : NetworkBehaviour
     public void SpawnDieEffect(Vector3 position)
     {
         Debug.Log("Spawning Die Effect at: " + position);
-
+        if (Config.FishKilledEffectPrefab == null)
+            Config.FishKilledEffectPrefab = Resources.Load<GameObject>("FishKilledEffect");
         // Ensure the FishKilledEffectPrefab is not a networked object
         if (Config.FishKilledEffectPrefab != null)
         {

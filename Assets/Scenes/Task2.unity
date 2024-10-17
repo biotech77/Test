@@ -1720,6 +1720,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Fishes: []
   fishPrefab: {fileID: 4415265094729860074, guid: 25d7becc671cda24185076be1ea30cf0, type: 3}
+  effectPrefab: {fileID: 4415265094729860074, guid: c74716077bb54374097798da78d63304, type: 3}
 --- !u!1 &1631306206
 GameObject:
   m_ObjectHideFlags: 0
