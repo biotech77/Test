@@ -91,6 +91,25 @@ public class LevelManager : MonoBehaviour
     }
     
 
+    public FishController FindClosestFish()
+    {
+        FishController closestFish = null;
+        float minDistance = Mathf.Infinity;  // Start with a very large distance
+
+        foreach (FishController fish in Fishes)
+        {
+            float distanceToFish = Vector3.Distance(transform.position, fish.transform.position);
+        
+            if (distanceToFish < minDistance)
+            {
+                minDistance = distanceToFish;
+                closestFish = fish;
+            }
+        }
+
+        return closestFish;
+    }
+    
     public FishController FindNearestFishInDirection(Vector3 projectilePosition, Vector3 direction)
     {
         FishController nearestFish = null;
