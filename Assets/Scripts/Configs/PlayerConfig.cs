@@ -8,4 +8,5 @@ public class PlayerConfig : ScriptableObject
     public float FireRate;
     public float ProjectileSpeed;
     public GameObject ProjectilePrefab;
+    public GameObject ProjectileNetworkPrefab;
 }

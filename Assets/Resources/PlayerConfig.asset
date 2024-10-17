@@ -15,3 +15,4 @@ MonoBehaviour:
   FireRate: 0.1
   ProjectileSpeed: 25
   ProjectilePrefab: {fileID: 4415265094729860074, guid: f02395f22b3d5184d90043d1c5d85d7d, type: 3}
+  ProjectileNetworkPrefab: {fileID: 4415265094729860074, guid: c06388e514e3eb149aeae820b376543e, type: 3}
