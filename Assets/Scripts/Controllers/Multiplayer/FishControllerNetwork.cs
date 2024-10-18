@@ -7,11 +7,10 @@ public class FishControllerNetwork : NetworkBehaviour
     public float OffScreenPadding = 0.1f;
     private Vector3 targetPosition;
     private LevelManagerNetwork _level;
-    private PlayerManagerNetwork _player;
     private GameManagerNetwork _game;
 
     private CompositeDisposable _disposables = new();
-    
+    private float _speed;    
     void OnCollisionEnter2D(Collision2D collision)
     {
         if(IsServer && collision.gameObject.CompareTag("Bullet"))
@@ -27,16 +26,39 @@ public class FishControllerNetwork : NetworkBehaviour
         }
     }
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+        if (IsServer)
+        {
+            _level = LevelManagerNetwork.Instance;
+            _game = GameManagerNetwork.Instance;
+
+            if (_level == null || _game == null)
+            {
+                Debug.LogError("FishControllerNetwork: LevelManagerNetwork or GameManagerNetwork instance is null on server.");
+                return;
+            }
+
+            Debug.Log("FishControllerNetwork: Initialized with LevelManagerNetwork and GameManagerNetwork.");
+
+            _speed = _level.Config.GetFishSpeed();
+            Observable.EveryUpdate().Subscribe(_ =>
+            {
+                Swim();
+            }).AddTo(_disposables);
+        }
+    }
+
     public void Initialize()
     {
-        _player = PlayerManagerNetwork.Instance;
-        _level = LevelManagerNetwork.Instance;
-        _game = GameManagerNetwork.Instance;
-        
-        Observable.EveryUpdate().Subscribe(_ =>
-        {
-            Swim();
-        }).AddTo(_disposables);
+        // _level = LevelManagerNetwork.Instance;
+        // _game = GameManagerNetwork.Instance;
+        //
+        // Observable.EveryUpdate().Subscribe(_ =>
+        // {
+        //     Swim();
+        // }).AddTo(_disposables);
     }
 
     public void MoveToTarget(Vector3 target)
@@ -47,9 +69,9 @@ public class FishControllerNetwork : NetworkBehaviour
     private void Swim()
     {
         if (transform == null) return;
-        
+
         transform.position =
-            Vector3.MoveTowards(transform.position, targetPosition, _level.Config.FishSpeed * Time.deltaTime);
+            Vector3.MoveTowards(transform.position, targetPosition, _speed * Time.deltaTime);
         if (Vector3.Distance(transform.position, targetPosition) < 0.1f)
         {
             targetPosition = _level.GetRandomTargetPosition();

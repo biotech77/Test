@@ -16,5 +16,10 @@ MonoBehaviour:
   FishKilledEffectPrefab: {fileID: 4415265094729860074, guid: c74716077bb54374097798da78d63304, type: 3}
   FishKilledEffectMultiplayerPrefab: {fileID: 4415265094729860074, guid: c74716077bb54374097798da78d63304, type: 3}
   FishSpeed: 6
-  MaxFishInPond: 3
+  MaxFishInPond: 4
   FishDieEaseEffect: 27
+  MinFishSpeed: 1
+  MaxFishSpeed: 10
+  MinFishSize: 0.15
+  MaxFishSize: 0.3
+  MaxSpreadAngle: 10

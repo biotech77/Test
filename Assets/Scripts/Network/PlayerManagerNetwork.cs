@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Configs;
 using UniRx;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,11 +8,10 @@ using UnityEngine;
 public class PlayerManagerNetwork : NetworkBehaviour
 {
     public Transform Cannon;
-    
-    public static PlayerManagerNetwork Instance;
     private float _lastFireTime;
     public Transform BulletSpawnPoint;
     private PlayerConfig _playerConfig;
+    private LevelConfig _levelConfig;
     private int _shotsFired;
     private int _totalShotsFired;
     public int TotalShotsFired => _totalShotsFired;
@@ -22,18 +22,35 @@ public class PlayerManagerNetwork : NetworkBehaviour
     public Action ShotFired { get; set; }
 
     private Queue<bool> _last10Shots = new Queue<bool>(10);
-    
+
     private void Awake()
     {
-        Instance = this;
-        
         _playerConfig = Resources.Load<PlayerConfig>("PlayerConfig");
         if (_playerConfig == null)
             Debug.LogError("PlayerConfig not found");
+        
+        _levelConfig = Resources.Load<LevelConfig>("LevelConfig");
+        if (_levelConfig == null)
+            Debug.LogError("LevelConfig not found");
     }
 
-    void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+        if (IsClient)
+        {
+            // Register this player with GameManagerNetwork on the client
+            if (GameManagerNetwork.Instance != null)
+            {
+                GameManagerNetwork.Instance.RegisterPlayer(OwnerClientId, this);
+                Debug.Log($"[Client] Player {OwnerClientId} registered with GameManagerNetwork.");
+            }
+            else
+            {
+                Debug.LogError("[Client] GameManagerNetwork.Instance is null during player registration.");
+            }
+        }
+
         if (IsOwner)
         {
             Observable.EveryUpdate()
@@ -41,6 +58,7 @@ public class PlayerManagerNetwork : NetworkBehaviour
                 .Subscribe(_ =>
                 {
                     RotateCannonTowardsMouse();
+                    _totalShotsFired++;
                     RequestFireServerRpc();
                     _lastFireTime = Time.time;
                 })
@@ -48,42 +66,60 @@ public class PlayerManagerNetwork : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = true)]
     void RequestFireServerRpc(ServerRpcParams rpcParams = default)
     {
-        // Server handles firing the projectile
-        FireProjectile(rpcParams.Receive.SenderClientId);
+        ulong shooterClientId = rpcParams.Receive.SenderClientId;
+        Debug.Log($"[Server] Received FireProjectile request from client {shooterClientId}.");
+        FireProjectile(shooterClientId);
     }
-    
+
     private void FireProjectile(ulong clientId)
     {
-        _totalShotsFired++;
-        // Calculate the direction from the cannon to the mouse
-        Vector3 direction = (BulletSpawnPoint.right).normalized; // Assuming the cannon's right direction is the firing direction
+        if (clientId == 0)
+        {
+            Debug.LogError("[Server] Invalid clientId: 0. Cannot spawn projectile.");
+            return;
+        }
 
+        // Calculate the direction from the cannon to the mouse
+        Vector3 baseDirection = (BulletSpawnPoint.right).normalized; // Assuming the cannon's right direction is the firing direction
+        Vector3 randomDirection = _levelConfig.GetRandomDirection(baseDirection);
         // Instantiate the projectile on the server
         GameObject projectile = Instantiate(_playerConfig.ProjectileNetworkPrefab, BulletSpawnPoint.position, Quaternion.identity);
 
         // Set the velocity for the projectile
         Rigidbody2D rb = projectile.GetComponent<Rigidbody2D>();
-        rb.velocity = direction * _playerConfig.ProjectileSpeed;
+        if (rb != null)
+        {
+            rb.velocity = randomDirection * _playerConfig.ProjectileSpeed;
+            Debug.Log($"[Server] Projectile velocity set to {rb.velocity}.");
+        }
+        else
+        {
+            Debug.LogError("[Server] Rigidbody2D component missing on Projectile prefab.");
+        }
 
-        // Spawn the projectile as a networked object
+        // Spawn the projectile as a networked object with ownership to the shooter client
         NetworkObject projectileNetworkObject = projectile.GetComponent<NetworkObject>();
-        projectileNetworkObject.SpawnWithOwnership(clientId);
+        if (projectileNetworkObject != null)
+        {
+            projectileNetworkObject.SpawnWithOwnership(clientId);
+            Debug.Log($"[Server] Projectile spawned with ownership to client {clientId}.");
+        }
+        else
+        {
+            Debug.LogError("[Server] NetworkObject component missing on Projectile prefab.");
+        }
     }
 
     private bool IsAllowedToFire()
     {
         return Time.time >= _lastFireTime + _playerConfig.FireRate;
     }
-    
+
     void RotateCannonTowardsMouse()
     {
-        // // Calculate the rotation angle based on mouse input
-        // Vector3 dir = Input.mousePosition - Camera.main.WorldToScreenPoint(transform.position);
-        // float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        
         // Convert mouse position from screen space to world space
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.nearClipPlane));
 
@@ -92,19 +128,19 @@ public class PlayerManagerNetwork : NetworkBehaviour
 
         // Calculate the angle for the rotation
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        
+
         // Send the angle to the server via Server RPC
         SubmitRotationRequestServerRpc(angle);
     }
 
-    [ServerRpc]
-    void SubmitRotationRequestServerRpc(float angle)
+    [ServerRpc(RequireOwnership = false)]
+    void SubmitRotationRequestServerRpc(float angle, ServerRpcParams rpcParams = default)
     {
-        // Optionally snap the angle if needed
-        int snappedAngle = (int)((angle + 45.0f) / 90.0f) * 90;
-        
+        Debug.Log($"[Server] Received rotation request. Angle: {angle} from client {rpcParams.Receive.SenderClientId}");
+
         // Rotate the cannon on the server
         Cannon.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        Debug.Log($"[Server] Cannon rotated to {angle} degrees.");
 
         // Notify all clients about the updated rotation
         UpdateCannonRotationClientRpc(angle);
@@ -115,29 +151,32 @@ public class PlayerManagerNetwork : NetworkBehaviour
     {
         // Apply the rotation on all clients
         Cannon.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        Debug.Log($"[Client] Cannon rotated to {angle} degrees.");
     }
 
     public void RegisterHit(ulong clientId)
     {
         UpdatePlayerHitInfoClientRpc(clientId);
     }
-    
+
     [ClientRpc]
     void UpdatePlayerHitInfoClientRpc(ulong clientId)
     {
-        Debug.Log("UpdatePlayerHitInfoClientRpc called! " + clientId);
+        Debug.Log($"[Client] UpdatePlayerHitInfoClientRpc called for clientId: {clientId}");
         UpdateShotRecord(true);
         var playerSlot = GameManagerNetwork.Instance.GetPlayerSlotByClientId(clientId);
-        Debug.Log("UpdatePlayerHitInfoClientRpc called! " + clientId + "|" + playerSlot);
+        Debug.Log($"[Client] Player slot retrieved: {playerSlot}");
         _shotsPerCycle++;
         _totalSuccessHits++;
         HitRegistered?.Invoke();
 
         if (playerSlot == -1) return;
         // Apply the rotation on all clients
-        GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(playerSlot, _totalSuccessHits,_totalShotsFired, _last10Shots);
+        if (clientId == NetworkManager.Singleton.LocalClientId)
+            GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(clientId, _totalSuccessHits, _totalShotsFired,
+                _last10Shots);
     }
-    
+
     public void RegisterMiss(ulong clientId)
     {
         UpdateShotRecord(false);  // Record a miss
@@ -145,34 +184,21 @@ public class PlayerManagerNetwork : NetworkBehaviour
         ShotFired?.Invoke();
 
         var playerSlot = GameManagerNetwork.Instance.GetPlayerSlotByClientId(clientId);
+        Debug.Log($"[Client] RegisterMiss called for clientId: {clientId}, PlayerSlot: {playerSlot}");
         if (playerSlot == -1) return;
 
-        GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(playerSlot, _totalSuccessHits, _totalShotsFired,
-            _last10Shots);
-        
-        // UpdatePlayerMissInfoClientRpc(clientId);
+        if (NetworkManager.Singleton.LocalClientId == clientId)
+            GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(clientId, _totalSuccessHits, _totalShotsFired,
+                _last10Shots);
     }
 
-    [ClientRpc]
-    void UpdatePlayerMissInfoClientRpc(ulong clientId)
-    {
-        UpdateShotRecord(false);  // Record a miss
-
-        ShotFired?.Invoke();
-
-        var playerSlot = GameManagerNetwork.Instance.GetPlayerSlotByClientId(clientId);
-        if (playerSlot == -1) return;
-
-        GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(playerSlot, _totalSuccessHits, _totalShotsFired,
-            _last10Shots);
-    }
-    
     private void UpdateShotRecord(bool isHit)
     {
         if (_last10Shots.Count >= 10)
         {
-            _last10Shots.Dequeue();  // Remove the oldest shot result
+            _last10Shots.Dequeue(); // Remove the oldest shot result
         }
+
         _last10Shots.Enqueue(isHit);
     }
 }

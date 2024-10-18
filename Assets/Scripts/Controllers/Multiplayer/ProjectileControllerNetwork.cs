@@ -5,8 +5,9 @@ using UnityEngine;
 public class ProjectileControllerNetwork : NetworkBehaviour
 {
     public float OffScreenPadding = 0.1f;
-    void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
         if (IsServer)
         {
             // Only the server should handle despawning
@@ -20,7 +21,7 @@ public class ProjectileControllerNetwork : NetworkBehaviour
                     viewPos.y < -OffScreenPadding || viewPos.y > 1 + OffScreenPadding)
                 {
                     // Despawn the projectile across the network
-                    NotifyClientOfMissClientRpc(OwnerClientId);
+                    NotifyClientOfMiss(OwnerClientId);
                     DespawnProjectile();
                     Debug.Log("Projectile Despawned! " + OwnerClientId);
                 }
@@ -58,9 +59,39 @@ public class ProjectileControllerNetwork : NetworkBehaviour
     }
     
     // Notify clients about the miss, so they can update the UI
-    [ClientRpc]
-    private void NotifyClientOfMissClientRpc(ulong clientId)
+    private void NotifyClientOfMiss(ulong clientId)
     {
-        PlayerManagerNetwork.Instance.RegisterMiss(clientId);
+        var rpcParams = new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new ulong[] { clientId }
+            }
+        };
+        NotifyClientOfMissClientRpc(clientId, rpcParams);
+    }
+    
+    // Notify clients about the miss, so they can update the UI
+    [ClientRpc]
+    private void NotifyClientOfMissClientRpc(ulong clientId, ClientRpcParams clientRpcParams = default)
+    {
+        var gameManager = GameManagerNetwork.Instance;
+        if (gameManager != null)
+        {
+            var playerManager = gameManager.GetPlayerManagerByClientId(clientId);
+            if (playerManager != null)
+            {
+                playerManager.RegisterMiss(clientId);
+                Debug.Log($"[Client] Miss registered for clientId: {clientId}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Client] PlayerManagerNetwork not found for clientId {clientId}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[Client] GameManagerNetwork.Instance is null");
+        }
     }
 }

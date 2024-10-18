@@ -26,31 +26,19 @@ public class GuiPlayerInfo : MonoBehaviour
     
     private StringBuilder _builder = new();
     
-    public void UpdatePlayerInfo(int playerId, int hits,int totalShots, Queue<bool> record)
+    public void UpdatePlayerInfo(ulong playerId, int hits,int totalShots, Queue<bool> record)
     {
         Debug.Log("UpdatePlayerInfo called! " + playerId);
 
         if (totalShots == 0) totalShots = 1;
         var successRate = (float)hits / totalShots;
         
-        if(playerId == 1)
-        {
-            if (!Player1Container.gameObject.activeInHierarchy)
-                Player1Container.SetActive(true);
+        if (!Player1Container.gameObject.activeInHierarchy)
+            Player1Container.SetActive(true);
 
-            Player1Name.text = $"Player: {playerId}";
-            Player1Hits.text = $"Hits: {hits.ToString()} Success Rate: {successRate}";
-            Player1Record.text = $"Last 10: {FormatRecord(record)}";
-        }
-        else if(playerId == 2)
-        {
-            if (!Player2Container.gameObject.activeInHierarchy)
-                Player2Container.SetActive(true);
-
-            Player2Name.text = $"Player: {playerId}";
-            Player2Hits.text = $"Hits: {hits.ToString()} Success Rate: {successRate}";
-            Player2Record.text = $"Last 10: {FormatRecord(record)}";
-        }
+        Player1Name.text = $"Player: {playerId}";
+        Player1Hits.text = $"Hits: {hits.ToString()} Success Rate: {successRate:F1}%";
+        Player1Record.text = $"Last 10: {FormatRecord(record)}";
     }
 
     string FormatRecord(Queue<bool> record)

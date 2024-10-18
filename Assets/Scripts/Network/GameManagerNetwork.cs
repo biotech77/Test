@@ -8,7 +8,8 @@ public class GameManagerNetwork : NetworkBehaviour
     public GameObject PlayerPrefab;
     public Transform[] SpawnPoints;
     private Dictionary<ulong, PlayerManagerNetwork> _players = new Dictionary<ulong, PlayerManagerNetwork>();
-
+    private NetworkVariable<ulong> Player1ClientId = new(ulong.MaxValue);
+    private NetworkVariable<ulong> Player2ClientId = new(ulong.MaxValue);
     public static GameManagerNetwork Instance;
     void Awake()
     {
@@ -33,8 +34,7 @@ public class GameManagerNetwork : NetworkBehaviour
         }
     }
 
-    private NetworkVariable<ulong> Player1ClientId = new(ulong.MaxValue);
-    private NetworkVariable<ulong> Player2ClientId = new(ulong.MaxValue);
+    
     private void OnClientConnected(ulong clientId)
     {
         var clientIndex = NetworkManager.Singleton.ConnectedClientsList.Count - 1;
@@ -102,6 +102,16 @@ public class GameManagerNetwork : NetworkBehaviour
         }
 
         return -1;
+    }
+    
+    
+    public void RegisterPlayer(ulong clientId, PlayerManagerNetwork player)
+    {
+        if (!_players.ContainsKey(clientId))
+        {
+            _players.Add(clientId, player);
+            Debug.Log($"[Client] Player {clientId} registered in GameManagerNetwork.");
+        }
     }
     
     public PlayerManagerNetwork GetPlayerBySlot(int slot)

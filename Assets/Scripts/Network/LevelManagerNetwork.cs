@@ -83,6 +83,14 @@ public class LevelManagerNetwork : NetworkBehaviour
             var fishInstance = Instantiate(fishPrefab, spawnPosition, Quaternion.identity);
             var controller = fishInstance.GetComponent<FishControllerNetwork>();
 
+            var randomScale = _config.GetFishSize();
+            fishInstance.transform.localScale = randomScale;
+            var trail = fishInstance.GetComponent<TrailRenderer>();
+            if (trail != null)
+            {
+                trail.startWidth = randomScale.x / 0.2f;
+                trail.endWidth = 0;
+            }
             // Spawn the fish as a networked object
             fishInstance.GetComponent<NetworkObject>().Spawn();
 
