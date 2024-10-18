@@ -20,7 +20,9 @@ public class ProjectileControllerNetwork : NetworkBehaviour
                     viewPos.y < -OffScreenPadding || viewPos.y > 1 + OffScreenPadding)
                 {
                     // Despawn the projectile across the network
+                    NotifyClientOfMissClientRpc(OwnerClientId);
                     DespawnProjectile();
+                    Debug.Log("Projectile Despawned! " + OwnerClientId);
                 }
             }).AddTo(this);
         }
@@ -53,5 +55,12 @@ public class ProjectileControllerNetwork : NetworkBehaviour
         {
             NetworkObject.Despawn();
         }
+    }
+    
+    // Notify clients about the miss, so they can update the UI
+    [ClientRpc]
+    private void NotifyClientOfMissClientRpc(ulong clientId)
+    {
+        PlayerManagerNetwork.Instance.RegisterMiss(clientId);
     }
 }

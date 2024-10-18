@@ -72,6 +72,8 @@ public class PlayerManager : MonoBehaviour
         ShotFired?.Invoke();
     }
     
+    
+    
     void RotateCannonTowardsMouse()
     {
         Vector3 dir = Input.mousePosition - Camera.main.WorldToScreenPoint(transform.position);

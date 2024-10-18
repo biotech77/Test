@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,6 +8,14 @@ public class GuiManagerNetwork : MonoBehaviour
     public Button ButtonHost;
     public Button ButtonClient;
     public Button ButtonServer;
+    public GuiPlayerInfo PlayerInfo;
+
+    public static GuiManagerNetwork Instance;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {

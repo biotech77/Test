@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UniRx;
 using Unity.Netcode;
 using UnityEngine;
@@ -19,6 +20,8 @@ public class PlayerManagerNetwork : NetworkBehaviour
     private int _shotsPerCycle;
     public Action HitRegistered { get; set; }
     public Action ShotFired { get; set; }
+
+    private Queue<bool> _last10Shots = new Queue<bool>(10);
     
     private void Awake()
     {
@@ -54,6 +57,7 @@ public class PlayerManagerNetwork : NetworkBehaviour
     
     private void FireProjectile(ulong clientId)
     {
+        _totalShotsFired++;
         // Calculate the direction from the cannon to the mouse
         Vector3 direction = (BulletSpawnPoint.right).normalized; // Assuming the cannon's right direction is the firing direction
 
@@ -113,10 +117,62 @@ public class PlayerManagerNetwork : NetworkBehaviour
         Cannon.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
     }
 
-    public void RegisterHit()
+    public void RegisterHit(ulong clientId)
     {
+        UpdatePlayerHitInfoClientRpc(clientId);
+    }
+    
+    [ClientRpc]
+    void UpdatePlayerHitInfoClientRpc(ulong clientId)
+    {
+        Debug.Log("UpdatePlayerHitInfoClientRpc called! " + clientId);
+        UpdateShotRecord(true);
+        var playerSlot = GameManagerNetwork.Instance.GetPlayerSlotByClientId(clientId);
+        Debug.Log("UpdatePlayerHitInfoClientRpc called! " + clientId + "|" + playerSlot);
         _shotsPerCycle++;
         _totalSuccessHits++;
         HitRegistered?.Invoke();
+
+        if (playerSlot == -1) return;
+        // Apply the rotation on all clients
+        GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(playerSlot, _totalSuccessHits,_totalShotsFired, _last10Shots);
+    }
+    
+    public void RegisterMiss(ulong clientId)
+    {
+        UpdateShotRecord(false);  // Record a miss
+
+        ShotFired?.Invoke();
+
+        var playerSlot = GameManagerNetwork.Instance.GetPlayerSlotByClientId(clientId);
+        if (playerSlot == -1) return;
+
+        GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(playerSlot, _totalSuccessHits, _totalShotsFired,
+            _last10Shots);
+        
+        // UpdatePlayerMissInfoClientRpc(clientId);
+    }
+
+    [ClientRpc]
+    void UpdatePlayerMissInfoClientRpc(ulong clientId)
+    {
+        UpdateShotRecord(false);  // Record a miss
+
+        ShotFired?.Invoke();
+
+        var playerSlot = GameManagerNetwork.Instance.GetPlayerSlotByClientId(clientId);
+        if (playerSlot == -1) return;
+
+        GuiManagerNetwork.Instance.PlayerInfo.UpdatePlayerInfo(playerSlot, _totalSuccessHits, _totalShotsFired,
+            _last10Shots);
+    }
+    
+    private void UpdateShotRecord(bool isHit)
+    {
+        if (_last10Shots.Count >= 10)
+        {
+            _last10Shots.Dequeue();  // Remove the oldest shot result
+        }
+        _last10Shots.Enqueue(isHit);
     }
 }

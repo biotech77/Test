@@ -97,7 +97,7 @@ public class FishControllerNetwork : NetworkBehaviour
         var playerManager = _game.GetPlayerManagerByClientId(clientId); // Example: find the player's manager
         if (playerManager != null)
         {
-            playerManager.RegisterHit(); // Assuming PlayerManagerNetwork has a method to handle registering hits/points
+            playerManager.RegisterHit(clientId); // Assuming PlayerManagerNetwork has a method to handle registering hits/points
         }
     }
 
