@@ -142,11 +142,11 @@ public class LevelManager : MonoBehaviour
         return Promise.Resolved();
     }
 
-    public void SpawnDieEffect(Vector3 position)
+    public void SpawnDieEffect(Vector3 position, float startScale = 0.5f, float endScale = 1f)
     {
         var effect = Instantiate(Config.FishKilledEffectPrefab, position, Quaternion.identity);
-        effect.transform.localScale = 0.5f * Vector3.one;
-        effect.transform.DOScale(1f, 0.5f).SetEase(Config.FishDieEaseEffect).OnComplete(() =>
+        effect.transform.localScale = startScale * Vector3.one;
+        effect.transform.DOScale(endScale, 0.5f).SetEase(Config.FishDieEaseEffect).OnComplete(() =>
         {
             Destroy(effect);
         });

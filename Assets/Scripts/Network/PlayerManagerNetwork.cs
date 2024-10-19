@@ -115,7 +115,7 @@ public class PlayerManagerNetwork : NetworkBehaviour
 
     private bool IsAllowedToFire()
     {
-        return Time.time >= _lastFireTime + _playerConfig.FireRate;
+        return Time.time >= _lastFireTime + _levelConfig.GetFireRate();
     }
 
     void RotateCannonTowardsMouse()

@@ -48,6 +48,8 @@ MonoBehaviour:
   Bullet: {fileID: 0}
   Cannon: {fileID: 3215023624224053912}
   BulletSpawnPoint: {fileID: 3723018514939486977}
+  IsHitNeedsToBeGuaranteed: 0
+  AllowedToGuaranteeHit: 1
 --- !u!1 &4626894121319881972
 GameObject:
   m_ObjectHideFlags: 0

@@ -10,6 +10,11 @@ public class GuiManagerNetwork : MonoBehaviour
     public Button ButtonServer;
     public GuiPlayerInfo PlayerInfo;
 
+    public GameObject ServerUI;
+    public GameObject ServerSettingsUI;
+    public GameObject ClientUI;
+    public GameObject GamePlayUI;
+    
     public static GuiManagerNetwork Instance;
 
     private void Awake()
@@ -32,6 +37,7 @@ public class GuiManagerNetwork : MonoBehaviour
     private void OnClientButtonClick()
     {
         NetworkManager.Singleton.StartClient();
+        ShowGamePlayUI();
     }
 
     private void OnHostButtonClick()
@@ -44,5 +50,37 @@ public class GuiManagerNetwork : MonoBehaviour
         ButtonHost.onClick.RemoveListener(OnHostButtonClick);
         ButtonHost.onClick.RemoveListener(OnClientButtonClick);
         ButtonHost.onClick.RemoveListener(OnServerButtonClick);
+    }
+
+    public void ShowServerUI()
+    {
+        ServerSettingsUI.gameObject.SetActive(false);
+        ServerUI.gameObject.SetActive(true);
+        ClientUI.gameObject.SetActive(false);
+        GamePlayUI.gameObject.SetActive(false);
+    }
+    
+    public void ShowClientUI()
+    {
+        ServerSettingsUI.gameObject.SetActive(false);
+        ServerUI.gameObject.SetActive(false);
+        ClientUI.gameObject.SetActive(true);
+        GamePlayUI.gameObject.SetActive(false);
+    }
+    
+    public void ShowGamePlayUI()
+    {
+        ServerSettingsUI.gameObject.SetActive(false);
+        ServerUI.gameObject.SetActive(false);
+        ClientUI.gameObject.SetActive(false);
+        GamePlayUI.gameObject.SetActive(true);
+    }
+    
+    public void ShowServerSettingsUI()
+    {
+        ServerSettingsUI.gameObject.SetActive(true);
+        ServerUI.gameObject.SetActive(false);
+        ClientUI.gameObject.SetActive(false);
+        GamePlayUI.gameObject.SetActive(false);
     }
 }

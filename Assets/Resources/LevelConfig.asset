@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: LevelConfig
   m_EditorClassIdentifier: 
   FishPrefab: {fileID: 4415265094729860074, guid: 6779efd39c61243469f9cb59660a4bc2, type: 3}
-  FishKilledEffectPrefab: {fileID: 4415265094729860074, guid: c74716077bb54374097798da78d63304, type: 3}
-  FishKilledEffectMultiplayerPrefab: {fileID: 4415265094729860074, guid: c74716077bb54374097798da78d63304, type: 3}
-  FishSpeed: 6
-  MaxFishInPond: 4
-  FishDieEaseEffect: 27
-  MinFishSpeed: 1
+  FishKilledEffectPrefab: {fileID: 4415265094729860074, guid: f3757ad9e4b6baa40b8e4a0b711ae7ae, type: 3}
+  FishKilledEffectMultiplayerPrefab: {fileID: 4415265094729860074, guid: f3757ad9e4b6baa40b8e4a0b711ae7ae, type: 3}
+  FishSpeed: 7
+  MaxFishInPond: 3
+  FishDieEaseEffect: 19
+  MinFishSpeed: 3
   MaxFishSpeed: 10
   MinFishSize: 0.15
   MaxFishSize: 0.3
+  FireRate: 10
   MaxSpreadAngle: 10

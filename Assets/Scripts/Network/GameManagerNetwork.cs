@@ -14,6 +14,15 @@ public class GameManagerNetwork : NetworkBehaviour
     void Awake()
     {
         Instance = this;
+        
+#if UNITY_EDITOR || UNITY_STANDALONE_WIN
+        GuiManagerNetwork.Instance.ShowServerUI();
+#elif UNITY_WEBGL
+        GuiManagerNetwork.Instance.ShowClientUI();
+#else
+        Debug.LogWarning("Unsupported platform for specific UI.");
+#endif
+        
     }
     
     public override void OnNetworkSpawn()
@@ -22,6 +31,8 @@ public class GameManagerNetwork : NetworkBehaviour
         {
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+
+            GuiManagerNetwork.Instance.ShowServerSettingsUI();
         }
     }
 

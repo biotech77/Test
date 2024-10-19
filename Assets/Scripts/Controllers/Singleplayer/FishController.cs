@@ -15,18 +15,8 @@ public class FishController : MonoBehaviour
         if (collision.gameObject.CompareTag("Bullet"))
         {
             Die();
+            Destroy(collision.gameObject);
         }
-        //
-        // if (collision.gameObject.CompareTag("Stone"))
-        // {
-        //     // Calculate the reflection direction
-        //     Vector2 normal = collision.contacts[0].normal;  // The normal of the surface the bullet hit
-        //     Vector2 incomingVelocity = GetComponent<Rigidbody2D>().velocity;  // Bullet's current velocity
-        //     Vector2 reflectedVelocity = Vector2.Reflect(incomingVelocity, normal);  // Reflect the velocity based on the normal
-        //
-        //     // Apply the reflected velocity
-        //     GetComponent<Rigidbody2D>().velocity = reflectedVelocity;
-        // }
     }
 
     public void Initialize()
